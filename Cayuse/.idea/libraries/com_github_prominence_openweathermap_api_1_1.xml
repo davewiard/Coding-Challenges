@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="com.github.prominence:openweathermap-api:1.1" type="repository">
+    <properties maven-id="com.github.prominence:openweathermap-api:1.1" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/prominence/openweathermap-api/1.1/openweathermap-api-1.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/alibaba/fastjson/1.2.44/fastjson-1.2.44.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
