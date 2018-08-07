@@ -11,13 +11,13 @@ package com.davewiard;
  */
 public class CityData {
     private String zipCode;
-    private Double latitude;
-    private Double longitude;
+    private Float latitude;
+    private Float longitude;
 
     private String cityName;
     private String timeZone;
     private Double elevation;
-    private Double temperature;
+    private Float temperature;
 
     public CityData(String zipCode) {
         this.zipCode = zipCode;
@@ -35,19 +35,19 @@ public class CityData {
         this.zipCode = zipCode;
     }
 
-    public Double getLatitude() {
+    public Float getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(Double latitude) {
+    public void setLatitude(Float latitude) {
         this.latitude = latitude;
     }
 
-    public Double getLongitude() {
+    public Float getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(Double longitude) {
+    public void setLongitude(Float longitude) {
         this.longitude = longitude;
     }
 
@@ -75,11 +75,11 @@ public class CityData {
         this.elevation = elevation;
     }
 
-    public Double getTemperature() {
+    public Float getTemperature() {
         return temperature;
     }
 
-    public void setTemperature(Double temperature) {
+    public void setTemperature(Float temperature) {
         this.temperature = temperature;
     }
 
