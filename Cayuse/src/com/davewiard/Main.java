@@ -1,61 +1,120 @@
 package com.davewiard;
 
-import net.aksingh.owmjapis.api.APIException;
-import net.aksingh.owmjapis.core.OWM;
-import net.aksingh.owmjapis.model.CurrentWeather;
-
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.TimeZone;
+
+import com.github.prominence.openweathermap.api.OpenWeatherMapManager;
+import com.github.prominence.openweathermap.api.WeatherRequester;
+import com.github.prominence.openweathermap.api.constants.Accuracy;
+import com.github.prominence.openweathermap.api.constants.Language;
+import com.github.prominence.openweathermap.api.constants.Unit;
+import com.github.prominence.openweathermap.api.model.response.Weather;
+
+import com.google.maps.ElevationApi;
+import com.google.maps.GeoApiContext;
+import com.google.maps.TimeZoneApi;
+import com.google.maps.model.ElevationResult;
+import com.google.maps.model.LatLng;
 
 public class Main {
 
     private static String apiKeyGoogle = System.getenv("API_KEY_GOOGLE");
     private static String apiKeyOWM = System.getenv("API_KEY_OWM");
+    private static GeoApiContext context = new GeoApiContext();
 
     public static void main(String[] args) {
-
         // get and save required API keys
         if (!getApiKeys()) {
             return;
         }
+
+        context.setApiKey(apiKeyGoogle);
 
         // check for ZIP code passed in on the command-line
         ArrayList<CityData> cityDataArrayList = getZipCode(args);
         for (CityData cityData : cityDataArrayList) {
             System.out.println("ZIP code: " + cityData.getZipCode());
 
-            OWM owm = new OWM(apiKeyOWM);
-            owm.setUnit(OWM.Unit.IMPERIAL);     // use Fahrenheit units instead of Kelvin
+            getOpenWeatherMapData(cityData);
+
+            // use one LatLng object for both Google API calls
+            LatLng latLng = new LatLng(cityData.getLatitude(), cityData.getLongitude());
+
+            getElevationFromGoogle(cityData, latLng);
+            getTimeZoneFromGoogle(cityData, latLng);
+
+            // sleep for 500 ms to help with quota limit issues
             try {
-                CurrentWeather currentWeather = owm.currentWeatherByZipCode(Integer.parseInt(cityData.getZipCode()));
-                // checking data retrieval was successful or not
-                if (currentWeather.hasRespCode() && currentWeather.getRespCode() == 200) {
-                    // get and save the city name if that field is available
-                    if (currentWeather.hasCityName()) {
-                        cityData.setCityName(currentWeather.getCityName());
-                        System.out.println("city name: " + cityData.getCityName());
-                    } else {
-                        // TODO
-                        // INCOMPLETE DATA RETURNED
-                    }
-
-                    // get and save the current temperature if that field is available
-                    if (currentWeather.hasMainData() && currentWeather.getMainData().hasTemp()) {
-                        cityData.setTemperature(currentWeather.getMainData().getTemp());
-                        System.out.println("city temp: " + cityData.getTemperature());
-                    } else {
-                        // TODO
-                        // INCOMPLETE DATA RETURNED
-                    }
-
-//                    currentWeather.getCoordData()
-                } else {
-                    // TODO
-                    // ERROR CONDITION, DATA CANNOT BE TRUSTED
-                }
-            } catch (APIException apie) {
-                apie.printStackTrace();
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
             }
+
+            System.out.println("At the location " + cityData.getCityName() +
+                               ", the temperature is " + cityData.getTemperature() +
+                               ", the timezone is " + cityData.getTimeZone() +
+                               ", and the elevation is " + cityData.getElevation());
+        }
+    }
+
+
+    /**
+     *
+     * @param cityData
+     * @param latLng
+     */
+    private static void getTimeZoneFromGoogle(CityData cityData, LatLng latLng) {
+        try {
+            TimeZone timeZone = TimeZoneApi.getTimeZone(context, latLng).await();
+            cityData.setTimeZone(timeZone.getDisplayName());
+//            System.out.println("time zone = " + cityData.getTimeZone());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     *
+     * @param cityData
+     * @param latLng
+     */
+    private static void getElevationFromGoogle(CityData cityData, LatLng latLng) {
+        // get the elevation for the given coordinates
+        try {
+            ElevationResult result = ElevationApi.getByPoint(context, latLng).await();
+            cityData.setElevation(result.elevation);
+//            System.out.println("elevation = " + cityData.getElevation());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     *
+     * @param cityData
+     */
+    private static void getOpenWeatherMapData(CityData cityData) {
+        // get the city name and temp for the given ZIP code
+        try {
+            OpenWeatherMapManager openWeatherMapManager = new OpenWeatherMapManager(apiKeyOWM);
+            WeatherRequester weatherRequester = openWeatherMapManager.getWeatherRequester();
+            Weather weatherResponse = weatherRequester
+                    .setLanguage(Language.ENGLISH)
+                    .setUnitSystem(Unit.IMPERIAL_SYSTEM)
+                    .setAccuracy(Accuracy.ACCURATE)
+                    .getByZIPCode(cityData.getZipCode(), "US");
+
+//            System.out.println(weatherResponse.toString());
+
+            cityData.setTemperature(weatherResponse.getTemperature());
+            cityData.setCityName(weatherResponse.getCityName());
+            cityData.setLatitude(weatherResponse.getCoordinates().getLatitude());
+            cityData.setLongitude(weatherResponse.getCoordinates().getLongitude());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -64,8 +123,7 @@ public class Main {
      * Get and save both the Google and OpenWeatherMap API keys from the environment.
      * @return boolean representing if both required API keys were found
      */
-    public static boolean getApiKeys() {
-
+    private static boolean getApiKeys() {
         if (apiKeyGoogle.length() == 0) {
             System.err.println("API_KEY_GOOGLE environment variable not defined or empty");
             return false;
