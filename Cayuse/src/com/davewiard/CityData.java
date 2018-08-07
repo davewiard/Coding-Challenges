@@ -19,8 +19,15 @@ public class CityData {
     private Double elevation;
     private Double temperature;
 
+    public CityData(String zipCode) {
+        this.zipCode = zipCode;
+    }
 
     public String getZipCode() {
+        if (this.zipCode.contains("-")) {
+            return zipCode.substring(0, zipCode.indexOf('-'));
+        }
+
         return zipCode;
     }
 
@@ -75,4 +82,5 @@ public class CityData {
     public void setTemperature(Double temperature) {
         this.temperature = temperature;
     }
+
 }
