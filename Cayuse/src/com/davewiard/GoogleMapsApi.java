@@ -11,6 +11,13 @@ import java.util.TimeZone;
 final class GoogleMapsApi {
 
     /**
+     * Prevent instantiation of this class. There is no need for it. Access the
+     * getElevation() and getTimeZone() methods directly through a class reference.
+     */
+    private GoogleMapsApi() {}
+
+
+    /**
      * Gets the elevation from the Google Elevation API
      * @param context Google's API context
      * @param latLng latitude and longitude coordinates to get the elevation for
