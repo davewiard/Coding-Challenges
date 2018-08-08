@@ -35,7 +35,7 @@ public class Main {
         // loop through each ZIP code to retrieve OpenWeatherMap and Google data for the given ZIP code
         ArrayList<CityData> cityDataArrayList = getZipCode(args);
         for (CityData cityData : cityDataArrayList) {
-            System.out.println("ZIP code: " + cityData.getZipCode());
+//            System.out.println("ZIP code: " + cityData.getZipCode());
 
             // retrieve the OpenWeatherMap data for the given ZIP code
             getOpenWeatherMapData(cityData);
@@ -45,11 +45,19 @@ public class Main {
 
             // get the elevation for the coordinates returned by OpenWeatherMap
             Double elevation = GoogleMapsApi.getElevation(context, latLng);
-            cityData.setElevation(elevation);
+            if (elevation == null) {
+                System.err.println("Failed to get elevation for " + cityData.getZipCode());
+            } else {
+                cityData.setElevation(elevation);
+            }
 
             // get the timezone for the coordinates returned by OpenWeatherMap
             String timeZone = GoogleMapsApi.getTimeZone(context, latLng);
-            cityData.setTimeZone(timeZone);
+            if (timeZone == null) {
+                System.err.println("Failed to get timezone for " + cityData.getZipCode());
+            } else {
+                cityData.setTimeZone(timeZone);
+            }
 
             // sleep for 500 ms to help with quota limit issues
             try {
@@ -71,25 +79,12 @@ public class Main {
      * @param cityData
      */
     private static void getOpenWeatherMapData(CityData cityData) {
-        // get the city name and temp for the given ZIP code
-        try {
-            OpenWeatherMapManager openWeatherMapManager = new OpenWeatherMapManager(apiKeyOWM);
-            WeatherRequester weatherRequester = openWeatherMapManager.getWeatherRequester();
-            Weather weatherResponse = weatherRequester
-                    .setLanguage(Language.ENGLISH)
-                    .setUnitSystem(Unit.IMPERIAL_SYSTEM)
-                    .setAccuracy(Accuracy.ACCURATE)
-                    .getByZIPCode(cityData.getZipCode(), "US");
+        OpenWeatherMapApi.getOpenWeatherMapData(apiKeyOWM, cityData.getZipCode());
 
-//            System.out.println(weatherResponse.toString());
-
-            cityData.setTemperature(weatherResponse.getTemperature());
-            cityData.setCityName(weatherResponse.getCityName());
-            cityData.setLatitude(weatherResponse.getCoordinates().getLatitude());
-            cityData.setLongitude(weatherResponse.getCoordinates().getLongitude());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        cityData.setCityName(OpenWeatherMapApi.getCityName());
+        cityData.setLatitude(OpenWeatherMapApi.getLatitude());
+        cityData.setLongitude(OpenWeatherMapApi.getLongitude());
+        cityData.setTemperature(OpenWeatherMapApi.getTemperature());
     }
 
 
