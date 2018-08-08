@@ -2,7 +2,7 @@ package com.davewiard;
 
 import java.util.regex.Pattern;
 
-public final class ZipCodeValidator {
+final class ZipCodeValidator {
     private final static String patternString = "^[0-9]{5}(?:-[0-9]{4})?$";
     private final static Pattern pattern = Pattern.compile(patternString);
 
@@ -12,7 +12,7 @@ public final class ZipCodeValidator {
      * @param zipCode The ZIP code value to be evaluated
      * @return boolean representing if the input value is in a valid U.S. ZIP code format
      */
-    public final static boolean isValidZipCode(String zipCode) {
+    static boolean isValidZipCode(String zipCode) {
         return pattern.matcher(zipCode).matches();
     }
 }
