@@ -1,6 +1,7 @@
 package com.davewiard;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.TimeZone;
 
@@ -28,21 +29,27 @@ public class Main {
         if (!getApiKeys()) {
             return;
         }
-
         context.setApiKey(apiKeyGoogle);
 
-        // check for ZIP code passed in on the command-line
+        // get all ZIP codes from the command-line (or user STDIN if none give on command-line)
+        // loop through each ZIP code to retrieve OpenWeatherMap and Google data for the given ZIP code
         ArrayList<CityData> cityDataArrayList = getZipCode(args);
         for (CityData cityData : cityDataArrayList) {
             System.out.println("ZIP code: " + cityData.getZipCode());
 
+            // retrieve the OpenWeatherMap data for the given ZIP code
             getOpenWeatherMapData(cityData);
 
             // use one LatLng object for both Google API calls
             LatLng latLng = new LatLng(cityData.getLatitude(), cityData.getLongitude());
 
-            getElevationFromGoogle(cityData, latLng);
-            getTimeZoneFromGoogle(cityData, latLng);
+            // get the elevation for the coordinates returned by OpenWeatherMap
+            Double elevation = GoogleMapsApi.getElevation(context, latLng);
+            cityData.setElevation(elevation);
+
+            // get the timezone for the coordinates returned by OpenWeatherMap
+            String timeZone = GoogleMapsApi.getTimeZone(context, latLng);
+            cityData.setTimeZone(timeZone);
 
             // sleep for 500 ms to help with quota limit issues
             try {
@@ -55,39 +62,6 @@ public class Main {
                                ", the temperature is " + cityData.getTemperature() +
                                ", the timezone is " + cityData.getTimeZone() +
                                ", and the elevation is " + cityData.getElevation());
-        }
-    }
-
-
-    /**
-     *
-     * @param cityData
-     * @param latLng
-     */
-    private static void getTimeZoneFromGoogle(CityData cityData, LatLng latLng) {
-        try {
-            TimeZone timeZone = TimeZoneApi.getTimeZone(context, latLng).await();
-            cityData.setTimeZone(timeZone.getDisplayName());
-//            System.out.println("time zone = " + cityData.getTimeZone());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    /**
-     *
-     * @param cityData
-     * @param latLng
-     */
-    private static void getElevationFromGoogle(CityData cityData, LatLng latLng) {
-        // get the elevation for the given coordinates
-        try {
-            ElevationResult result = ElevationApi.getByPoint(context, latLng).await();
-            cityData.setElevation(result.elevation);
-//            System.out.println("elevation = " + cityData.getElevation());
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -138,19 +112,17 @@ public class Main {
     }
 
     /**
-     *
-     * @param args
-     * @return
+     * Get a list of ZIP code strings from either the command-line. If none given on command-line prompt the
+     * user to enter one ZIP code per line on STDIN.
+     * @param args Arguments passed in from the command-line
+     * @return ArrayList of ZIP code string values
      */
     private static ArrayList<CityData> getZipCode(String[] args) {
         ArrayList<String> zipCodeArrayList = new ArrayList<>();
         ArrayList<CityData> cityDataArrayList = new ArrayList<>();
 
         if (args.length > 0) {
-            // add all command-line arguments to the list
-            for (String arg : args) {
-                zipCodeArrayList.add(arg);
-            }
+            zipCodeArrayList.addAll(Arrays.asList(args));
         } else {
             // no parameters passed in on command-line, read from STDIN
             try (Scanner scanner = new Scanner(System.in)) {
@@ -166,6 +138,9 @@ public class Main {
                 e.printStackTrace();
             }
         }
+
+        // TODO
+        // Can the following loop be rewritten as a lambda expression?
 
         // Verify if the given ZIP codes are in a valid format
         // Only keep valid input but print errors about invalid formatted entries
