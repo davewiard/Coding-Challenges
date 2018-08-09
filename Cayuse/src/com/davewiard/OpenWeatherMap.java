@@ -8,23 +8,25 @@ import com.github.prominence.openweathermap.api.constants.Unit;
 import com.github.prominence.openweathermap.api.exception.DataNotFoundException;
 import com.github.prominence.openweathermap.api.model.response.Weather;
 
+/**
+ * Get specific data from the OpenWeatherMap API for the requested U.S. ZIP code. Need the city name, temperature (in
+ * Fahrenheit), latitude, and longitude. The latitude and longitude are used elsewhere to obtain data from the Google
+ * Maps API.
+ */
 final class OpenWeatherMap {
 
-    private static Float latitude;
-    private static Float longitude;
-
-    private static String cityName;
-    private static Float temperature;
-
-    private OpenWeatherMapManager openWeatherMapManager;
+    private static WeatherRequester weatherRequester;
+    private Weather weatherResponse;
 
 
     /**
-     * Object constructor
+     * Class constructor requires the OpenWeatherMap API key so multiple requests to OpenWeatherMap could be done
+     * sing the same WeatherRequester even though we do not need to do this for this code challenge.
      * @param apiKeyOWM OpenWeatherMap API key
      */
     OpenWeatherMap(String apiKeyOWM) {
-        openWeatherMapManager = new OpenWeatherMapManager(apiKeyOWM);
+        OpenWeatherMapManager openWeatherMapManager = new OpenWeatherMapManager(apiKeyOWM);
+        weatherRequester = openWeatherMapManager.getWeatherRequester();
     }
 
 
@@ -35,17 +37,11 @@ final class OpenWeatherMap {
     boolean getOpenWeatherMapData(String zipCode) {
         // get the city name and temp for the given ZIP code
         try {
-            WeatherRequester weatherRequester = openWeatherMapManager.getWeatherRequester();
-            Weather weatherResponse = weatherRequester
+            weatherResponse = weatherRequester
                     .setLanguage(Language.ENGLISH)
                     .setUnitSystem(Unit.IMPERIAL_SYSTEM)
                     .setAccuracy(Accuracy.ACCURATE)
                     .getByZIPCode(zipCode, "US");
-
-            cityName = weatherResponse.getCityName();
-            latitude = weatherResponse.getCoordinates().getLatitude();
-            longitude = weatherResponse.getCoordinates().getLongitude();
-            temperature = weatherResponse.getTemperature();
         } catch (DataNotFoundException dnfe) {
             System.err.println("No data found for ZIP code (" + zipCode + ")");
             return false;
@@ -58,19 +54,23 @@ final class OpenWeatherMap {
         return true;
     }
 
+
     String getCityName() {
-        return cityName;
+        return weatherResponse.getCityName();
     }
+
 
     Float getLatitude() {
-        return latitude;
+        return weatherResponse.getCoordinates().getLatitude();
     }
+
 
     Float getLongitude() {
-        return longitude;
+        return weatherResponse.getCoordinates().getLongitude();
     }
 
+
     Float getTemperature() {
-        return temperature;
+        return weatherResponse.getTemperature();
     }
 }
