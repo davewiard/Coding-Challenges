@@ -8,11 +8,15 @@ import com.google.maps.model.LatLng;
 
 import java.util.TimeZone;
 
+/**
+ * Get specific data from the Google TimeZone and Elevation APIs for the requested latitudinal and longitudinal
+ * coordinates.
+ */
 final class GoogleMapsApi {
 
     /**
-     * Prevent instantiation of this class. There is no need for it. Access the
-     * getElevation() and getTimeZone() methods directly through a class reference.
+     * Prevent instantiation of this class. There is no need for it. Access the getElevation() and getTimeZone()
+     * methods directly through a class reference.
      */
     private GoogleMapsApi() {}
 
