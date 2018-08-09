@@ -56,21 +56,21 @@ final class OpenWeatherMap {
 
 
     String getCityName() {
-        return weatherResponse.getCityName();
+        return (weatherResponse == null) ? null : weatherResponse.getCityName();
     }
 
 
     Float getLatitude() {
-        return weatherResponse.getCoordinates().getLatitude();
+        return (weatherResponse == null) ? null : weatherResponse.getCoordinates().getLatitude();
     }
 
 
     Float getLongitude() {
-        return weatherResponse.getCoordinates().getLongitude();
+        return (weatherResponse == null) ? null : weatherResponse.getCoordinates().getLongitude();
     }
 
 
     Float getTemperature() {
-        return weatherResponse.getTemperature();
+        return (weatherResponse == null) ? null : weatherResponse.getTemperature();
     }
 }

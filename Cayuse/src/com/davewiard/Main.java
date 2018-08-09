@@ -79,6 +79,11 @@ public class Main {
         OpenWeatherMap openWeatherMap = new OpenWeatherMap(apiKeyOWM);
         openWeatherMap.getOpenWeatherMapData(cityData.getZipCode());
 
+        // check whether OpenWeatherMap returned data or not
+        if (openWeatherMap.getCityName() == null) {
+            return;
+        }
+
         cityData.setCityName(openWeatherMap.getCityName());
         cityData.setLatitude(openWeatherMap.getLatitude());
         cityData.setLongitude(openWeatherMap.getLongitude());
