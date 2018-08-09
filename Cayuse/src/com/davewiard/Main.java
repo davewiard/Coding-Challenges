@@ -90,11 +90,11 @@ public class Main {
      * Get both the Google and OpenWeatherMap API keys from the environment.
      * @return boolean representing if both required API keys were found
      */
-    private static boolean checkApiKeys() {
+    static boolean checkApiKeys() {
         //
         // TODO
-        // Getting the API keys from the environment is not ideal. A better solution is
-        // to store them in a file with restricted permissions.
+        // Getting the API keys from the environment is not ideal. A better solution is to store them in a file with
+        // restricted permissions. Better yet, store them as encrypted data that must be decrypted on-the-fly.
         //
 
         if (apiKeyGoogle.length() == 0) {
@@ -136,13 +136,13 @@ public class Main {
                 } while (input.length() != 0);
             } catch (Exception e) {
                 e.printStackTrace();
+                return null;
             }
         }
 
-        // Verify if the given ZIP codes are in a valid format. Only keep valid input
-        // but print errors about invalid formatted entries. Also note that being a
-        // valid format does not mean the ZIP code is a valid ZIP code (e.g. "00000"
-        // is a valid format but is not a valid ZIP code).
+        // Verify if the given ZIP codes are in a valid format. Only keep valid input but print errors about invalid
+        // formatted entries. Also note that being a valid format does not mean the ZIP code is a valid ZIP code
+        // (e.g. "00000" is a valid format but is not a valid ZIP code).
         for (String zipCode : zipCodeArrayList) {
             // verify if the given zip code is in an invalid format
             if (!ZipCodeValidator.isValidZipCode(zipCode)) {
