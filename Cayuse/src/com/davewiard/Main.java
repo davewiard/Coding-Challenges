@@ -1,60 +1,56 @@
 package com.davewiard;
 
+import com.google.maps.GeoApiContext;
+import com.google.maps.model.LatLng;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
-import java.util.TimeZone;
-
-import com.github.prominence.openweathermap.api.OpenWeatherMapManager;
-import com.github.prominence.openweathermap.api.WeatherRequester;
-import com.github.prominence.openweathermap.api.constants.Accuracy;
-import com.github.prominence.openweathermap.api.constants.Language;
-import com.github.prominence.openweathermap.api.constants.Unit;
-import com.github.prominence.openweathermap.api.model.response.Weather;
-
-import com.google.maps.ElevationApi;
-import com.google.maps.GeoApiContext;
-import com.google.maps.TimeZoneApi;
-import com.google.maps.model.ElevationResult;
-import com.google.maps.model.LatLng;
 
 public class Main {
 
     private static String apiKeyGoogle = System.getenv("API_KEY_GOOGLE");
     private static String apiKeyOWM = System.getenv("API_KEY_OWM");
-    private static GeoApiContext context = new GeoApiContext();
+    private static GeoApiContext geoApiContext = new GeoApiContext();
 
     public static void main(String[] args) {
-        // get and save required API keys
-        if (!getApiKeys()) {
+        // check that the required API keys have a value assigned
+        if (!checkApiKeys()) {
             return;
         }
-        context.setApiKey(apiKeyGoogle);
+
+        // initialize the Google API context with the API key
+        geoApiContext.setApiKey(apiKeyGoogle);
 
         // get all ZIP codes from the command-line (or user STDIN if none give on command-line)
         // loop through each ZIP code to retrieve OpenWeatherMap and Google data for the given ZIP code
         ArrayList<CityData> cityDataArrayList = getZipCode(args);
         for (CityData cityData : cityDataArrayList) {
-//            System.out.println("ZIP code: " + cityData.getZipCode());
 
             // retrieve the OpenWeatherMap data for the given ZIP code
             getOpenWeatherMapData(cityData);
+            if (cityData.getLatitude() == null || cityData.getLongitude() == null) {
+                // failed to get requested data, move on to next ZIP code
+                continue;
+            }
 
             // use one LatLng object for both Google API calls
             LatLng latLng = new LatLng(cityData.getLatitude(), cityData.getLongitude());
 
             // get the elevation for the coordinates returned by OpenWeatherMap
-            Double elevation = GoogleMapsApi.getElevation(context, latLng);
+            Double elevation = GoogleMapsApi.getElevation(geoApiContext, latLng);
             if (elevation == null) {
                 System.err.println("Failed to get elevation for " + cityData.getZipCode());
+                continue;
             } else {
                 cityData.setElevation(elevation);
             }
 
             // get the timezone for the coordinates returned by OpenWeatherMap
-            String timeZone = GoogleMapsApi.getTimeZone(context, latLng);
+            String timeZone = GoogleMapsApi.getTimeZone(geoApiContext, latLng);
             if (timeZone == null) {
                 System.err.println("Failed to get timezone for " + cityData.getZipCode());
+                continue;
             } else {
                 cityData.setTimeZone(timeZone);
             }
@@ -64,6 +60,7 @@ public class Main {
                 Thread.sleep(500);
             } catch (InterruptedException ie) {
                 ie.printStackTrace();
+                continue;
             }
 
             System.out.println("At the location " + cityData.getCityName() +
@@ -75,24 +72,31 @@ public class Main {
 
 
     /**
-     *
-     * @param cityData
+     * Wrapper for getting the data returned by OpenWeatherMap API into our CityData object.
+     * @param cityData destination object for the OpenWeatherMap API data
      */
     private static void getOpenWeatherMapData(CityData cityData) {
-        OpenWeatherMapApi.getOpenWeatherMapData(apiKeyOWM, cityData.getZipCode());
+        OpenWeatherMap openWeatherMap = new OpenWeatherMap(apiKeyOWM);
+        openWeatherMap.getOpenWeatherMapData(cityData.getZipCode());
 
-        cityData.setCityName(OpenWeatherMapApi.getCityName());
-        cityData.setLatitude(OpenWeatherMapApi.getLatitude());
-        cityData.setLongitude(OpenWeatherMapApi.getLongitude());
-        cityData.setTemperature(OpenWeatherMapApi.getTemperature());
+        cityData.setCityName(openWeatherMap.getCityName());
+        cityData.setLatitude(openWeatherMap.getLatitude());
+        cityData.setLongitude(openWeatherMap.getLongitude());
+        cityData.setTemperature(openWeatherMap.getTemperature());
     }
 
 
     /**
-     * Get and save both the Google and OpenWeatherMap API keys from the environment.
+     * Get both the Google and OpenWeatherMap API keys from the environment.
      * @return boolean representing if both required API keys were found
      */
-    private static boolean getApiKeys() {
+    private static boolean checkApiKeys() {
+        //
+        // TODO
+        // Getting the API keys from the environment is not ideal. A better solution is
+        // to store them in a file with restricted permissions.
+        //
+
         if (apiKeyGoogle.length() == 0) {
             System.err.println("API_KEY_GOOGLE environment variable not defined or empty");
             return false;
@@ -105,6 +109,7 @@ public class Main {
 
         return true;
     }
+
 
     /**
      * Get a list of ZIP code strings from either the command-line. If none given on command-line prompt the
@@ -134,18 +139,16 @@ public class Main {
             }
         }
 
-        // TODO
-        // Can the following loop be rewritten as a lambda expression?
-
-        // Verify if the given ZIP codes are in a valid format
-        // Only keep valid input but print errors about invalid formatted entries
+        // Verify if the given ZIP codes are in a valid format. Only keep valid input
+        // but print errors about invalid formatted entries. Also note that being a
+        // valid format does not mean the ZIP code is a valid ZIP code (e.g. "00000"
+        // is a valid format but is not a valid ZIP code).
         for (String zipCode : zipCodeArrayList) {
             // verify if the given zip code is in an invalid format
             if (!ZipCodeValidator.isValidZipCode(zipCode)) {
                 System.err.println(zipCode + " is not a valid U.S. ZIP code.");
             } else {
-                CityData cityData = new CityData(zipCode);
-                cityDataArrayList.add(cityData);
+                cityDataArrayList.add(new CityData(zipCode));
             }
         }
 
